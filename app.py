@@ -10,14 +10,16 @@ st.write("생활 정보를 입력하면 당뇨 여부를 예측합니다.")
 st.markdown("---")
 
 # [모델 로드 로직]
-# 실제 사용 시에는 학습된 모델 파일(diabetes.pkl)의 경로를 지정하세요.
 @st.cache_resource  # 모델을 매번 새로 로드하지 않고 캐싱하여 속도를 높입니다.
 def load_model():
     try:
         with open("diabetes.pkl", "rb") as f:
             model = pickle.load(f)
         return model
-    except FileNotFoundError:
+    # FileNotFoundError뿐만 아니라 pickle 관련 에러 등 모든 예외를 처리하도록 수정
+    except Exception as e:
+        # 어떤 에러가 발생했는지 Streamlit 사이드바에 조용히 기록 (디버깅용)
+        st.sidebar.error(f"모델 로드 실패: {e}")
         return None
 
 model = load_model()
@@ -47,25 +49,32 @@ if st.button("🔍 당뇨 예측하기", use_container_width=True):
     
     # 상황 A: 실제 모델 파일이 존재하는 경우
     if model is not None:
-        # 0 또는 1 예측 (0: 정상, 1: 당뇨)
-        prediction = model.predict(input_data)
-        # 확률 예측 (옵션: 당뇨일 확률 % 표현용)
-        prediction_proba = model.predict_proba(input_data)[0][1] * 100
-        
-        # 결과 시각화
-        st.subheader("📊 예측 결과")
-        if prediction[0] == 1:
-            st.error(f"⚠️ 당뇨병 환자일 가능성이 높습니다. (확률: {prediction_proba:.1f}%)")
-            st.warning("전문 의료기관을 방문하여 정확한 진단을 받아보시는 것을 권장합니다.")
-        else:
-            st.success(f"✅ 당뇨병 정상군일 가능성이 높습니다. (안전 확률: {100 - prediction_proba:.1f}%)")
-            st.info("꾸준한 건강 관리를 통해 건강을 유지하세요!")
+        try:
+            # 0 또는 1 예측 (0: 정상, 1: 당뇨)
+            prediction = model.predict(input_data)
+            # 확률 예측 (옵션: 당뇨일 확률 % 표현용)
+            prediction_proba = model.predict_proba(input_data)[0][1] * 100
             
-    # 상황 B: 아직 모델 파일이 없는 경우 (테스트용 가상 로직)
-    else:
-        st.warning("기존에 학습된 `diabetes.pkl` 파일이 없어 가상 로직으로 대체합니다.")
+            # 결과 시각화
+            st.subheader("📊 예측 결과")
+            if prediction[0] == 1:
+                st.error(f"⚠️ 당뇨병 환자일 가능성이 높습니다. (확률: {prediction_proba:.1f}%)")
+                st.warning("전문 의료기관을 방문하여 정확한 진단을 받아보시는 것을 권장합니다.")
+            else:
+                st.success(f"✅ 당뇨병 정상군일 가능성이 높습니다. (안전 확률: {100 - prediction_proba:.1f}%)")
+                st.info("꾸준한 건강 관리를 통해 건강을 유지하세요!")
+        
+        except Exception as e:
+            st.error(f"모델 예측 중 오류가 발생했습니다: {e}")
+            st.info("아래의 가상 로직 결과로 대체합니다.")
+            model = None # 에러 발생 시 아래의 가상 로직이 실행되도록 유도
+            
+    # 상황 B: 아직 모델 파일이 없거나 깨진 경우 (테스트용 가상 로직)
+    if model is None:
+        st.warning("`diabetes.pkl` 파일에 문제가 있거나 없어 가상 로직으로 대체합니다.")
         
         # 간단한 규칙 기반(Rule-based) 가상 예측 알고리즘 예시
+        st.subheader("📊 예측 결과 (가상 데이터)")
         if glucose >= 140.0 or bmi >= 30.0:
             st.error("⚠️ 당뇨 위험군으로 예측됩니다. (가상 결과)")
         else:
