@@ -10,11 +10,11 @@ st.write("생활 정보를 입력하면 당뇨 여부를 예측합니다.")
 st.markdown("---")
 
 # [모델 로드 로직]
-# 실제 사용 시에는 학습된 모델 파일(diabetes_model.pkl)의 경로를 지정하세요.
+# 실제 사용 시에는 학습된 모델 파일(diabetes.pkl)의 경로를 지정하세요.
 @st.cache_resource  # 모델을 매번 새로 로드하지 않고 캐싱하여 속도를 높입니다.
 def load_model():
     try:
-        with open("diabetes_model.pkl", "rb") as f:
+        with open("diabetes.pkl", "rb") as f:
             model = pickle.load(f)
         return model
     except FileNotFoundError:
@@ -63,7 +63,7 @@ if st.button("🔍 당뇨 예측하기", use_container_width=True):
             
     # 상황 B: 아직 모델 파일이 없는 경우 (테스트용 가상 로직)
     else:
-        st.warning("기존에 학습된 `diabetes_model.pkl` 파일이 없어 가상 로직으로 대체합니다.")
+        st.warning("기존에 학습된 `diabetes.pkl` 파일이 없어 가상 로직으로 대체합니다.")
         
         # 간단한 규칙 기반(Rule-based) 가상 예측 알고리즘 예시
         if glucose >= 140.0 or bmi >= 30.0:
